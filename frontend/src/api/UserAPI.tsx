@@ -1,4 +1,5 @@
 import {useMutation} from "@tanstack/react-query";
+import {useAuth0} from "@auth0/auth0-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -7,10 +8,13 @@ type CreateUserRequest = {
     email: string,
 }
 export const useCreateUser = () => {
+    const {getAccessTokenSilently } = useAuth0();
     const createNewUser = async (user: CreateUserRequest) => {
+        const accessToken = await getAccessTokenSilently();
         const response = await fetch(`${API_BASE_URL}/api/users`, {
             method: "POST",
             headers:{
+                Authorization: `Bearer ${accessToken}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(user),
