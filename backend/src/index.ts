@@ -1,9 +1,8 @@
 import express from "express";
-import type { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv"
 import mongoose from "mongoose";
-import userRoutes from "./routes/userRoutes.js";
+import userRoutes from "./routes/userRoutes.ts";
 dotenv.config();
 
 mongoose.connect(process.env.MONGODB_URI as string).then(()=>{

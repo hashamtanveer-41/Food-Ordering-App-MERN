@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import User from "../models/user.js";
+import User from "../models/user.ts";
 
 export const createUser =async (req: Request, res: Response)=>{
     try {
@@ -8,6 +8,10 @@ export const createUser =async (req: Request, res: Response)=>{
         if(existingUser){
             return res.status(400).json({message: "User already exists"});
         }
+       const newUser = new User(req.body);
+        await newUser.save();
+        return res.status(201).json(newUser.toObject());
+
     }catch (err){
         console.log(err);
         res.status(500).json({message: "Error Creating User"})
