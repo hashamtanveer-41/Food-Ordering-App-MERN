@@ -4,7 +4,7 @@ import cloudinary from "cloudinary";
 import mongoose from "mongoose";
 export const createRestaurant = async (req: Request, res: Response) => {
     try {
-        const existingRestaurant = await Restaurant.find({user: req.userId as string});
+        const existingRestaurant = await Restaurant.findOne({user: req.userId as string});
         if (existingRestaurant) {
             return res.status(409).json({ message: "User restaurant alreadyExist"});
         }
@@ -15,18 +15,9 @@ export const createRestaurant = async (req: Request, res: Response) => {
         if (!image) {
             return res.status(400).json({ message: "Image file is required" });
         }
-        const { restaurantName, city, country, deliveryPrice, estimateDeliveryTime, cuisines, menuItems } = req.body;
-        const newRestaurant = new Restaurant({
-            user: new mongoose.Types.ObjectId(req.userId),
-            restaurantName,
-            city,
-            country,
-            deliveryPrice,
-            estimateDeliveryTime,
-            cuisines: cuisines.split(",").map((cuisine: string) => cuisine.trim()),
-            menuItems: JSON.parse(menuItems),
-            imageUrl: uploadResponse.url,
-        });
+        const newRestaurant = new Restaurant(req.body)
+        newRestaurant.imageUrl = uploadResponse.secure_url;
+        newRestaurant.user = new mongoose.Types.ObjectId(req.userId);
         await newRestaurant.save();
         res.status(201).json({ message: "Restaurant created successfully", restaurant: newRestaurant });
     } catch (error) {

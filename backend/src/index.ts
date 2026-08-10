@@ -5,6 +5,7 @@ import dotenv from "dotenv"
 import mongoose from "mongoose";
 import userRoutes from "./routes/userRoutes.ts";
 import {v2 as cloudinary} from "cloudinary";
+import restaurantRoutes from "./routes/resturantRoutes.ts";
 dotenv.config();
 
 mongoose.connect(process.env.MONGODB_URI as string).then(()=>{
@@ -28,7 +29,7 @@ app.get("/health", async (req: Request, res:Response, next:NextFunction)=>{
     res.send({message: "Server is running"});
 })
 app.use("/api/users", userRoutes);
-
+app.use("/api/restaurants", restaurantRoutes);
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
