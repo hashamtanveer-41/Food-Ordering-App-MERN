@@ -8,7 +8,7 @@ const AppRoutes = () => {
     return (
         <Routes>
             <Route path='/auth-callback' element={<AuthCallBackPage/>}/>
-            <Route path='/' element={<Layout><HomePage /></Layout>}/>
+            <Route path='/' element={<Layout showHero={true}><HomePage /></Layout>}/>
             <Route path='/user-profile' element={<Layout><UserProfilePage /></Layout>}/>
             <Route path='*' element={<Navigate to='/' />} />
         </Routes>
