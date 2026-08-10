@@ -1,5 +1,5 @@
 import "dotenv/config"
-import express from "express";
+import express, {type NextFunction,type Request,type Response} from "express";
 import cors from "cors";
 import dotenv from "dotenv"
 import mongoose from "mongoose";
@@ -17,6 +17,9 @@ app.use(express.json());
 app.use(cors());
 const PORT = 8000;
 
+app.get("/health", async (req: Request, res:Response, next:NextFunction)=>{
+    res.send({message: "Server is running"});
+})
 app.use("/api/users", userRoutes);
 
 app.listen(PORT, () => {
