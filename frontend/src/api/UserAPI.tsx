@@ -1,8 +1,38 @@
-import {useMutation} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {useAuth0} from "@auth0/auth0-react";
 import {toast} from "sonner";
+import type {User} from "@/types.ts";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+export const userGetCurrentUser = ()=>{
+    const {getAccessTokenSilently } = useAuth0();
+    const getCurrentUser = async (): Promise<User> => {
+        const accessToken = await getAccessTokenSilently();
+        const response = await fetch(`${API_BASE_URL}/api/users`, {
+            method: "GET",
+            headers:{
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+        });
+        if (!response.ok) {
+            throw new Error("Failed to fetch current user");
+        }
+        return response.json();
+    };
+    const { data: currentUser, isPending, isError, error } = useQuery({
+        queryKey: ["fetchCurrentUser"],
+        queryFn: getCurrentUser,
+    });
+    if (isError){
+        toast.error(error.toString);
+    }
+    return {
+        currentUser,
+        isPending,
+    };
+}
 
 type CreateUserRequest = {
     auth0Id: string,
