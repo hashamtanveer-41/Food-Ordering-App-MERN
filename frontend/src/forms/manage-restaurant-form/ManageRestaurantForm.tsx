@@ -5,6 +5,10 @@ import {Form} from "@/components/ui/form.tsx";
 import DetailsSection from "@/forms/manage-restaurant-form/DetailsSection.tsx";
 import {Separator} from "@/components/ui/separator.tsx";
 import CuisinesSection from "@/forms/manage-restaurant-form/CuisinesSection.tsx";
+import MenuSection from "@/forms/manage-restaurant-form/MenuSection.tsx";
+import ImageSection from "@/forms/manage-restaurant-form/ImageSection.tsx";
+import LoadingButton from "@/components/LoadingButton.tsx";
+import {Button} from "@/components/ui/button.tsx";
 
 const formSchema = z.object({
     restaurantName: z.string({
@@ -77,6 +81,11 @@ const ManageRestaurantForm = ({onSave, isLoading}:Props) => {
                 <DetailsSection />
                 <Separator />
                 <CuisinesSection />
+                <Separator />
+                <MenuSection />
+                <Separator />
+                <ImageSection />
+                {isLoading? <LoadingButton /> : <Button type='submit' >Submit</Button>}
             </form>
         </Form>
     )
