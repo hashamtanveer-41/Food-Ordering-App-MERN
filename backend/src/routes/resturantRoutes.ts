@@ -1,5 +1,5 @@
 import express from "express";
-import {createRestaurant} from "../controllers/resturantController.ts";
+import {createRestaurant, getRestaurant} from "../controllers/resturantController.ts";
 import multer from "multer";
 import {jwtCheck, jwtParse} from "../middlewares/auth.ts";
 
@@ -15,5 +15,6 @@ const upload = multer({
 });
 
 router.post("/",jwtCheck, jwtParse, upload.single("imageFile"), createRestaurant)
+router.get("/", jwtCheck, jwtParse,getRestaurant)
 
 export default router;

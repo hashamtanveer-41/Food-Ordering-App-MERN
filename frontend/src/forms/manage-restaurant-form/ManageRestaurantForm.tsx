@@ -9,6 +9,8 @@
     import ImageSection from "@/forms/manage-restaurant-form/ImageSection.tsx";
     import LoadingButton from "@/components/LoadingButton.tsx";
     import {Button} from "@/components/ui/button.tsx";
+    import type {RestaurantType} from "@/types.ts";
+    import {useEffect} from "react";
 
     const formSchema = z.object({
         restaurantName: z.string({
@@ -40,6 +42,7 @@
             })
         ),
         imageFile: z.instanceof(File, { message: "Image file is required" })
+            .optional()
             .refine((file) => !file || file.size <= 5 * 1024 * 1024, {
                 message: "Image file size must be less than or equal to 5MB",
             }),
@@ -53,15 +56,33 @@
     type Props = {
         onSave: (restaurantData: FormData) => void;
         isLoading: boolean;
+        restaurant?: RestaurantType;
     }
-    const ManageRestaurantForm = ({onSave, isLoading}:Props) => {
+    const ManageRestaurantForm = ({onSave, isLoading, restaurant}:Props) => {
         const form = useForm<RestaurantFormData>({
             resolver: zodResolver(formSchema) as any,
-            defaultValues:{
+            defaultValues: {
+                restaurantName: "",
+                city: "",
+                country: "",
+                deliveryPrice: 0,
+                estimatedDeliveryTime: 0,
                 cuisines: [],
-                menuItems: [{name: "", price: 0}],
+                menuItems: [{ name: "", price: 0 }],
             }
         })
+        useEffect(() => {
+            if (!restaurant){
+                return;
+            }
+            const restaurantData = (restaurant as any).restaurant || restaurant;
+
+            const updatedRestaurant = {
+                ...restaurantData
+            };
+            console.log(updatedRestaurant)
+            form.reset(updatedRestaurant);
+        }, [form, restaurant]);
         const handleSubmit = (data: RestaurantFormData) => {
             const formData = new FormData();
             formData.append("restaurantName", data.restaurantName);
@@ -76,10 +97,12 @@
                 formData.append(`menuItems[${index}][name]`, menuItem.name);
                 formData.append(`menuItems[${index}][price]`, menuItem.price.toString());
             });
-            formData.append("imageFile", data.imageFile);
+            if (data.imageFile) {
+                formData.append("imageFile", data.imageFile);
+            }
             onSave(formData);
         }
-        console.log(form.formState.errors);
+
         return (
             <Form {...form}>
                 <form

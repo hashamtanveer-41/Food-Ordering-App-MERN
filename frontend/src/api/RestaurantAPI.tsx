@@ -1,9 +1,34 @@
 import {useAuth0} from "@auth0/auth0-react";
-import {useMutation} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {toast} from "sonner";
 import type {RestaurantType} from "@/types.ts";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+export const useGetRestaurants = () => {
+    const {getAccessTokenSilently} = useAuth0();
+    const getRestaurantRequest = async (): Promise<RestaurantType> => {
+        const token = await getAccessTokenSilently();
+        const response = await fetch(`${API_BASE_URL}/api/restaurants`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        if (!response.ok) {
+            throw new Error("Failed to fetch restaurants");
+        }
+        return response.json();
+    };
+    const {data: restaurant, isPending, error} = useQuery({
+        queryKey: ["fetchRestaurant"],
+        queryFn: getRestaurantRequest,
+    });
+    return {
+        restaurant,
+        isPending,
+        error,
+    }
+}
 
 export const useCreateRestaurant = ()=> {
     const {getAccessTokenSilently} = useAuth0();
