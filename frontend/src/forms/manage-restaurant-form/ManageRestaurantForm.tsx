@@ -79,6 +79,7 @@
             formData.append("imageFile", data.imageFile);
             onSave(formData);
         }
+        console.log(form.formState.errors);
         return (
             <Form {...form}>
                 <form
@@ -92,7 +93,7 @@
                     <MenuSection />
                     <Separator />
                     <ImageSection />
-                    {isLoading? <LoadingButton /> : <Button type='submit' >Submit</Button>}
+                    {isLoading? <LoadingButton /> : <Button type='submit'>Submit</Button>}
                 </form>
             </Form>
         )

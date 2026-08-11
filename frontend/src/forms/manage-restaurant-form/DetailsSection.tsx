@@ -25,7 +25,7 @@ const DetailsSection = () => {
                         <FormMessage />
                     </FormItem>
                 )}
-                name='resturantName'
+                name='restaurantName'
             />
             <div className="flex gap-4">
                 <FormField
