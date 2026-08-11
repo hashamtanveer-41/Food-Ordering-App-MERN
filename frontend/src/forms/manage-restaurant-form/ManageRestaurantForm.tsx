@@ -41,12 +41,13 @@
                 price: z.coerce.number().min(0, "Menu item price must be greater than or equal to 0"),
             })
         ),
+        imageUrl: z.string().optional(),
         imageFile: z.instanceof(File, { message: "Image file is required" })
             .optional()
             .refine((file) => !file || file.size <= 5 * 1024 * 1024, {
                 message: "Image file size must be less than or equal to 5MB",
             }),
-    }).refine((data) => data.imageFile, {
+    }).refine((data) => data.imageFile || data.imageUrl, {
         message: "Either image URL or image File must be provided",
         path: ["imageFile"],
     });

@@ -1,8 +1,14 @@
 import express from "express";
-import {createRestaurant, getRestaurant} from "../controllers/resturantController.ts";
+import {
+    createRestaurant,
+    getRestaurant,
+    searchRestaurants,
+    updateRestaurant
+} from "../controllers/resturantController.ts";
 import multer from "multer";
 import {jwtCheck, jwtParse} from "../middlewares/auth.ts";
 import {validateUserRequest} from "../middlewares/validation.ts";
+import {param} from "express-validator";
 
 const router = express.Router();
 
@@ -18,5 +24,10 @@ const upload = multer({
 router.post("/",jwtCheck, jwtParse, upload.single("imageFile"), validateUserRequest, createRestaurant)
 router.get("/", jwtCheck, jwtParse,getRestaurant)
 router.put("/", jwtCheck, jwtParse, upload.single("imageFile"),validateUserRequest, updateRestaurant)
+router.get(
+    "/search/:city",
+    param("city").isString().trim().notEmpty().withMessage("City parameter must be a valid string"),
+    searchRestaurants
+);
 
 export default router;
