@@ -1,7 +1,7 @@
 import {useAuth0} from "@auth0/auth0-react";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {toast} from "sonner";
-import type {RestaurantType} from "@/types.ts";
+import type {RestaurantSearchResponse, RestaurantType} from "@/types.ts";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -91,5 +91,22 @@ export const useUpdateRestaurant = ()=> {
     return {
         updateRestaurant,
         isPending,
+    }
+}
+
+export const useSearchRestaurant = (city?:string)=>{
+    const createSearchRequest = async (): Promise<RestaurantSearchResponse>=>{
+        const response  = await fetch(`${API_BASE_URL}/api/restaurants/search/${city}`);
+        if(!response.ok){
+            throw new Error("Failed to get restaurant")
+        }
+        return response.json();
+    };
+    const {data: results, isLoading} = useQuery({
+        queryKey: ["searchRestaurants"],
+        queryFn: createSearchRequest
+    });
+    return {
+        results,isLoading
     }
 }
