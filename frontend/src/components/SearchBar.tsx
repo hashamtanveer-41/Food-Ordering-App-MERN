@@ -5,6 +5,7 @@ import {Form, FormControl, FormField, FormItem} from "@/components/ui/form.tsx";
 import {Search} from "lucide-react";
 import {Input} from "@/components/ui/input.tsx";
 import {Button} from "@/components/ui/button.tsx";
+import {useEffect} from "react";
 
 const formSchema = z.object({
     searchQuery: z.string().min(1, { message: "Restaurant Name is required" }),
@@ -15,14 +16,18 @@ type Props = {
     onSubmit: (formData: SearchForm) => void;
     placeholder: string;
     onReset?: () => void;
+    searchQuery: string;
 }
-const SearchBar = ({onReset, onSubmit, placeholder}: Props) => {
+const SearchBar = ({onReset, onSubmit, placeholder, searchQuery}: Props) => {
     const form = useForm<SearchForm>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            searchQuery: "",
+            searchQuery,
         }
     });
+    useEffect(() => {
+        form.reset({searchQuery});
+    }, [form, searchQuery]);
 
     const handleReset = () => {
         form.reset({
@@ -47,11 +52,9 @@ const SearchBar = ({onReset, onSubmit, placeholder}: Props) => {
                     )}
                     name="searchQuery"
                 />
-                {form.formState.isDirty && (
                     <Button variant='outline' className="rounded-full" type='button' onClick={handleReset}>
                         Clear
                     </Button>
-                )}
                 <Button className="rounded-full bg-orange-500" type='submit'>Search</Button>
             </form>
         </Form>

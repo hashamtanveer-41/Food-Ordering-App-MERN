@@ -12,7 +12,7 @@ const SearchResultCard = ({restaurant}:Props) => {
             <AspectRatio ratio={16/6}>
                 <img src={restaurant.imageUrl} className="rounded-md w-full h-full object-cover"/>
             </AspectRatio>
-            <div>
+             <div>
                 <h3 className="text-2xl font-bold tracking-tight mb-2 group-hover hover:underline">{restaurant.restaurantName}</h3>
                 <div id='card-content' className="grid md:grid-cols-2 gap-2">
                     <div className="flex flex-row flex-wrap">
