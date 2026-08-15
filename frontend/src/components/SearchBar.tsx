@@ -39,7 +39,7 @@ const SearchBar = ({onReset, onSubmit, placeholder, searchQuery}: Props) => {
     }
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className={`flex items-center flex-1 gap-3 justify-between flex-row border-2 rounded-full p-3 ${form.formState.errors.searchQuery && "border-red-500"}`}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className={`flex items-center gap-3 justify-between flex-row border-2 rounded-full p-3 ${form.formState.errors.searchQuery && "border-red-500"}`}>
                 <Search className="ml-1 text-orange-500 hidden md:block" size={30} strokeWidth={2.5} />
                 <FormField
                     control={form.control}
