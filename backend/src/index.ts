@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv"
 import mongoose from "mongoose";
 import userRoutes from "./routes/userRoutes.ts";
+import orderRoutes from "./routes/orderRoute.ts";
 import {v2 as cloudinary} from "cloudinary";
 import restaurantRoutes from "./routes/resturantRoutes.ts";
 dotenv.config();
@@ -30,6 +31,7 @@ app.get("/health", async (req: Request, res:Response, next:NextFunction)=>{
 })
 app.use("/api/users", userRoutes);
 app.use("/api/restaurants", restaurantRoutes);
+app.use("/api/order", orderRoutes);
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

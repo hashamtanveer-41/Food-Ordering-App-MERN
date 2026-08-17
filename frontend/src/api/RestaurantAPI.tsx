@@ -116,3 +116,26 @@ export const useSearchRestaurant = (searchState: SearchState, city?:string)=>{
         results,isLoading
     }
 }
+
+export const useGetRestaurantById = (restaurantId?: string) => {
+    const getRestaurantByIdRequest = async (): Promise<RestaurantType> => {
+        const response = await fetch(
+            `${API_BASE_URL}/api/restaurants/${restaurantId}`
+        );
+        if (!response.ok) {
+            throw new Error("Failed to fetch restaurant");
+        }
+        return response.json();
+    };
+    const {data: restaurant, isPending, error} = useQuery({
+        queryKey: ["fetchRestaurantById", restaurantId],
+        queryFn: getRestaurantByIdRequest,
+    });
+    if (error){
+        toast.error("Unable to fetch Restaurant");
+    }
+    return {
+        restaurant,
+        isPending
+    }
+}

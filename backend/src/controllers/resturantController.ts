@@ -9,6 +9,20 @@ const uploadImage = async (image: Express.Multer.File) => {
     const uploadResponse = await cloudinary.v2.uploader.upload(dataURI);
     return uploadResponse.secure_url;
 }
+
+export const getRestaurantById = async (req: Request, res: Response) => {
+    try {
+        const restaurantId = req.params.restaurantId;
+        const restaurant = await Restaurant.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(404).json({message: "restaurant not found"})
+        }
+        return res.json(restaurant);
+    }catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
 export const createRestaurant = async (req: Request, res: Response) => {
     try {
         const existingRestaurant = await Restaurant.findOne({user: req.userId as string});
