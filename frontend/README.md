@@ -1,84 +1,189 @@
 # HashEats — Frontend
 
-<img src="https://skillicons.dev/icons?i=react,typescript,vite,tailwind" alt="Frontend tech stack icons" />
+> Vite + React SPA for the HashEats food ordering platform.
 
-This UI lets customers search restaurants, inspect menus, build a cart, and complete checkout through Stripe. Auth0 protects profile and restaurant-owner workflows, while React Query keeps server data in sync with the backend. The app is built with Vite, React Router, shadcn-style UI primitives, and Tailwind CSS.
+<img src="https://skillicons.dev/icons?i=react,typescript,vite,tailwind" alt="Frontend Tech Stack" />
+
+---
+
+## Overview
+
+The frontend delivers a fast, responsive experience for two user roles: customers searching restaurants, building carts, and completing checkout; and restaurant owners managing their profile, menu, and order pipeline from a protected dashboard. Auth0 handles authentication. React Query manages all server state. The app is built with Vite and styled with Tailwind CSS + shadcn/ui.
+
+---
 
 ## Directory Structure
+
 ```text
-src/
-├── api/                # Fetch wrappers and React Query hooks for backend access
-├── auth/               # Auth0 provider and protected route guard
-├── components/         # Reusable UI blocks for headers, cards, search, and orders
-├── forms/              # Profile and restaurant management forms
-├── layouts/            # App shell with header, hero, and footer
-├── pages/              # Route-level screens
-├── config/             # UI config for cuisines and order states
-├── types.ts            # Shared frontend TypeScript types
-└── main.tsx            # App bootstrap, router, query client, toaster
+frontend/
+├── src/
+│   ├── api/                   # React Query hooks wrapping all API calls
+│   │   ├── MyUserApi.tsx
+│   │   ├── MyRestaurantApi.tsx
+│   │   ├── RestaurantApi.tsx
+│   │   └── OrderApi.tsx
+│   ├── components/            # Shared UI components (Header, Footer, etc.)
+│   │   ├── ui/                # shadcn/ui primitives
+│   │   └── ...
+│   ├── pages/                 # Route-level page components
+│   │   ├── HomePage.tsx
+│   │   ├── SearchPage.tsx
+│   │   ├── DetailPage.tsx
+│   │   ├── UserProfilePage.tsx
+│   │   ├── ManageRestaurantPage.tsx
+│   │   ├── OrderStatusPage.tsx
+│   │   └── AuthCallbackPage.tsx
+│   ├── auth/                  # Auth0 provider config
+│   ├── AppRoutes.tsx          # React Router route definitions + guards
+│   ├── App.tsx
+│   └── main.tsx
+├── .env
+├── index.html
+├── package.json
+├── tailwind.config.ts
+└── vite.config.ts
 ```
 
+---
+
 ## Environment Variables
+
 | Variable | Description | Example |
-| --- | --- | --- |
-| `VITE_API_BASE_URL` | Base URL for the backend API | `http://localhost:8000` |
+|---|---|---|
+| `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:8000` |
 | `VITE_AUTH0_DOMAIN` | Auth0 tenant domain | `dev-example.us.auth0.com` |
 | `VITE_AUTH0_CLIENT_ID` | Auth0 SPA client ID | `abc123def456` |
-| `VITE_AUTH0_CALLBACK_URL` | Redirect URL after Auth0 login | `http://localhost:5173/auth-callback` |
+| `VITE_AUTH0_CALLBACK_URL` | Post-login redirect URI | `http://localhost:5173/auth-callback` |
 | `VITE_AUTH0_AUDIENCE` | Auth0 audience for API tokens | `https://hasheats-api` |
 
-## Local Development Setup
-1. Install dependencies.
+> ⚠️ Vite bakes all `VITE_*` variables into the static bundle at build time. Changing them in your hosting dashboard has no effect on an existing build — you must trigger a full rebuild after any change.
+
+---
+
+## Local Development
+
+1. Install dependencies
    ```bash
+   cd frontend
    npm install
    ```
-2. Create `frontend/.env` with the variables above.
-3. Start the Vite dev server.
+
+2. Create the env file
+   ```bash
+   cp .env.example .env
+   # Fill in all VITE_* values
+   ```
+
+3. Start the dev server
    ```bash
    npm run dev
    ```
-4. Open the app at `http://localhost:5173`.
+
+The app will be available at `http://localhost:5173`. The backend must also be running for API calls to succeed.
+
+---
 
 ## Build & Preview
-1. Create a production build.
-   ```bash
-   npm run build
-   ```
-2. Preview the build locally.
-   ```bash
-   npm run preview
-   ```
 
-## Key Pages and Routes
-| Route | Component | Description | Auth Required |
-| --- | --- | --- | --- |
-| `/` | `HomePage` | Landing page with city search and marketing content. | No |
-| `/search/:city` | `SearchPage` | Restaurant search with filters, sort, and pagination. | No |
-| `/detail/:restaurantId` | `DetailPage` | Restaurant details, menu, cart, and checkout flow. | No |
-| `/auth-callback` | `AuthCallBackPage` | Auth0 callback that provisions the local user. | No |
-| `/user-profile` | `UserProfilePage` | View and edit the authenticated user profile. | Yes |
-| `/order-status` | `OrderStatusPage` | Track the authenticated user’s orders. | Yes |
-| `/manage-restaurant` | `ManageRestaurantPage` | Owner dashboard for restaurant and order management. | Yes |
+```bash
+# Production build
+npm run build
+
+# Preview the production build locally
+npm run preview
+```
+
+The compiled output lands in `frontend/dist/`. In the monolith deployment, the Express backend serves this directory as static files.
+
+---
+
+## Pages & Routes
+
+| Route | Page Component | Auth Required | Description |
+|---|---|---|---|
+| `/` | `HomePage` | ❌ | Landing page with city search |
+| `/search/:city` | `SearchPage` | ❌ | Restaurant search results with filters |
+| `/detail/:restaurantId` | `DetailPage` | ❌ | Menu, cart, and checkout entry point |
+| `/auth-callback` | `AuthCallbackPage` | ❌ | Auth0 post-login callback handler |
+| `/user-profile` | `UserProfilePage` | ✅ | Edit delivery address and name |
+| `/manage-restaurant` | `ManageRestaurantPage` | ✅ (owner) | Create / update restaurant and menu |
+| `/order-status` | `OrderStatusPage` | ✅ | View active and past orders |
+
+Route guards are implemented in `AppRoutes.tsx` using Auth0's `withAuthenticationRequired` HOC. Unauthenticated users attempting to access protected routes are redirected to the Auth0 login page.
+
+---
 
 ## State Management
-Server state is handled with React Query and wrapped in a shared `QueryClientProvider` in `main.tsx`. Local UI state covers search filters, form state, and cart contents, and the cart is persisted in `sessionStorage` per restaurant. There is no Redux store or global context for application data beyond Auth0 and React Query.
 
-## API Integration Notes
-- The API base URL comes from `VITE_API_BASE_URL`; set it explicitly for every environment.
-- Backend calls are implemented with fetch-based hooks in `src/api/*`, not Axios, so there are no Axios interceptors in this codebase.
-- Protected requests obtain an Auth0 access token via `getAccessTokenSilently()` and send it as a Bearer token to the backend.
-- React Query retries failed requests once and does not refetch on window focus.
-- Request errors surface through `sonner` toasts, which are mounted once in `main.tsx`.
+All server state is managed by **React Query** (`@tanstack/react-query`). Each resource has a dedicated hook file in `src/api/`:
+
+- `useGetMyUser` / `useCreateMyUser` / `useUpdateMyUser` — user profile
+- `useGetMyRestaurant` / `useCreateMyRestaurant` / `useUpdateMyRestaurant` / `useGetMyRestaurantOrders` / `useUpdateMyRestaurantOrder` — owner dashboard
+- `useSearchRestaurants` / `useGetRestaurant` — public search
+- `useGetMyOrders` / `useCreateCheckoutSession` — customer orders
+
+Local UI state (cart contents, selected filters, active tab) lives in `useState` inside the relevant page component. There is no global client-side store (Redux / Zustand).
+
+---
+
+## API Integration
+
+All requests go through a shared `fetch`-based pattern inside the React Query hooks. The `VITE_API_BASE_URL` env variable sets the base URL. Auth0's `getAccessTokenSilently` is called inside each authenticated hook to attach the `Bearer` token before the request fires.
+
+```ts
+const { getAccessTokenSilently } = useAuth0();
+
+const accessToken = await getAccessTokenSilently();
+
+const response = await fetch(`${API_BASE_URL}/api/my/user`, {
+  method: "PUT",
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify(formData),
+});
+```
+
+Errors returned from the API are surfaced via React Query's `error` state and shown to the user through toast notifications (`sonner`).
+
+---
 
 ## Component Architecture
-- `layouts/` provides the shared page shell: header, optional hero, content container, and footer.
-- `components/` holds reusable blocks for navigation, search, restaurant cards, order status, and checkout UI.
-- `forms/` contains the structured form sections for user profiles and restaurant management.
-- `pages/` composes the app’s route-level experiences from the reusable pieces above.
-- `components/ui/` contains the low-level visual primitives used across the app.
 
-## Deployment Notes
-- Run `npm run build` and deploy the generated `dist/` folder to Netlify, Vercel, or any static host.
-- Set all `VITE_*` environment variables in the host dashboard before deployment.
-- Point `VITE_API_BASE_URL` at the deployed backend URL.
-- If the backend serves the frontend build in production, deploy the frontend build artifacts so `frontend/dist` is available to the API server.
+| Group | Location | Responsibility |
+|---|---|---|
+| Layout | `components/Header.tsx`, `components/Footer.tsx` | App shell, nav, auth buttons |
+| Search | `components/SearchBar.tsx`, `components/SearchResultCard.tsx` | City search input and result rendering |
+| Restaurant detail | `components/MenuItem.tsx`, `components/OrderSummary.tsx`, `components/CheckoutButton.tsx` | Menu display, cart state, Stripe redirect |
+| Owner dashboard | `components/ManageRestaurantForm/` | Multi-section form for restaurant and menu CRUD |
+| Order tracking | `components/OrderStatusHeader.tsx`, `components/OrderStatusDetail.tsx` | Live order progress display |
+| UI primitives | `components/ui/` | shadcn/ui components (Button, Input, Select, etc.) |
+
+---
+
+## Deployment
+
+### Netlify / Vercel (static)
+
+```bash
+# Build command
+npm run build
+
+# Publish directory
+frontend/dist
+```
+
+Set all `VITE_*` environment variables in the platform's dashboard. After any env change, trigger a full redeploy — the variables are baked into the bundle at build time.
+
+### Monolith (served by Express)
+
+No separate deployment needed. Run `npm run build` in the frontend directory and the Express backend will serve `frontend/dist` automatically. Ensure the `FRONTEND_URL` backend variable matches the live domain.
+
+### Auth0 Configuration for Production
+
+Update the following in the Auth0 dashboard before going live:
+
+- **Allowed Callback URLs** → `https://your-domain.com/auth-callback`
+- **Allowed Logout URLs** → `https://your-domain.com`
+- **Allowed Web Origins** → `https://your-domain.com`

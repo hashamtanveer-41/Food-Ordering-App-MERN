@@ -1,141 +1,236 @@
 # HashEats — Backend
 
-<img src="https://skillicons.dev/icons?i=nodejs,express,typescript,mongodb,docker" alt="Backend tech stack icons" />
+> Express + TypeScript REST API powering the HashEats food ordering platform.
 
-This service powers authentication-aware restaurant search, restaurant management, and order placement. It connects to MongoDB through Mongoose, uploads restaurant images to Cloudinary, and creates Stripe checkout sessions with webhook-driven payment updates. Protected routes use Auth0 JWT validation plus a local user lookup to map Auth0 identities to app users.
+<img src="https://skillicons.dev/icons?i=nodejs,express,typescript,mongodb,docker" alt="Backend Tech Stack" />
+
+---
+
+## Overview
+
+This service handles all business logic for HashEats: user and restaurant management, menu operations, order creation, Stripe payment sessions, webhook processing, and Cloudinary image uploads. Auth0-issued JWTs protect all non-public routes. In production, the server also serves the compiled React frontend as a monolith.
+
+---
 
 ## Directory Structure
+
 ```text
-src/
-├── controllers/        # Request handlers for users, restaurants, and orders
-├── middlewares/        # JWT auth and request validation helpers
-├── models/             # Mongoose schemas for users, restaurants, and orders
-├── routes/             # Express route declarations
-└── index.ts            # Server bootstrap, MongoDB connection, Cloudinary config, static hosting
+backend/
+├── src/
+│   ├── controllers/
+│   │   ├── AuthController.ts        # User upsert on first Auth0 login
+│   │   ├── MyRestaurantController.ts # Owner CRUD for restaurant + menu
+│   │   ├── RestaurantController.ts  # Public search and detail endpoints
+│   │   └── OrderController.ts       # Stripe checkout, webhook, order status
+│   ├── middleware/
+│   │   ├── auth.ts                  # Auth0 JWT validation (jwtCheck + jwtParse)
+│   │   └── validation.ts            # express-validator middleware chains
+│   ├── models/
+│   │   ├── user.ts                  # User schema
+│   │   ├── restaurant.ts            # Restaurant + MenuItem schemas
+│   │   └── order.ts                 # Order schema
+│   ├── routes/
+│   │   ├── AuthRoute.ts
+│   │   ├── MyRestaurantRoute.ts
+│   │   ├── RestaurantRoute.ts
+│   │   └── OrderRoute.ts
+│   └── index.ts                     # App entry — middleware stack, routes, static serving
+├── .env
+├── Dockerfile
+├── package.json
+└── tsconfig.json
 ```
 
-## Environment Variables
-| Variable | Required | Description | Example |
-| --- | --- | --- | --- |
-| `MONGODB_URI` | Yes | MongoDB connection string | `mongodb+srv://<user>:<password>@cluster.mongodb.net/hasheats` |
-| `AUTH0_AUDIENCE` | Yes | Auth0 API audience for JWT validation | `https://hasheats-api` |
-| `AUTH0_ISSUER_BASE_URL` | Yes | Auth0 issuer base URL | `https://dev-example.us.auth0.com/` |
-| `CLOUDINARY_CLOUD_NAME` | Yes | Cloudinary cloud name for image uploads | `hasheats-cloud` |
-| `CLOUDINARY_API_KEY` | Yes | Cloudinary API key | `123456789012345` |
-| `CLOUDINARY_API_SECRET` | Yes | Cloudinary API secret | `cloudinary-secret` |
-| `STRIPE_SECRET_KEY` | Yes | Stripe secret key used to create checkout sessions | `sk_test_...` |
-| `STRIPE_SECRET_WEBHOOK` | Yes | Stripe webhook signing secret | `whsec_...` |
-| `FRONTEND_URL` | Yes | Public frontend URL used in Stripe redirects | `http://localhost:5173` |
+---
 
-## Local Development Setup
-1. Install dependencies.
+## Environment Variables
+
+| Variable | Required | Description | Example |
+|---|---|---|---|
+| `MONGODB_URI` | ✅ | Mongoose connection string | `mongodb+srv://<user>:<pass>@cluster.mongodb.net/hasheats` |
+| `AUTH0_AUDIENCE` | ✅ | Auth0 API audience for JWT validation | `https://hasheats-api` |
+| `AUTH0_ISSUER_BASE_URL` | ✅ | Auth0 tenant issuer URL | `https://dev-example.us.auth0.com/` |
+| `CLOUDINARY_CLOUD_NAME` | ✅ | Cloudinary cloud identifier | `hasheats-cloud` |
+| `CLOUDINARY_API_KEY` | ✅ | Cloudinary API key | `123456789012345` |
+| `CLOUDINARY_API_SECRET` | ✅ | Cloudinary API secret | `cloudinary-secret` |
+| `STRIPE_SECRET_KEY` | ✅ | Stripe secret key for sessions | `sk_test_...` |
+| `STRIPE_SECRET_WEBHOOK` | ✅ | Stripe webhook signing secret | `whsec_...` |
+| `FRONTEND_URL` | ✅ | Frontend origin for Stripe redirects | `http://localhost:5173` |
+| `PORT` | ❌ | Server port (defaults to `8000`) | `8000` |
+
+---
+
+## Local Development
+
+1. Install dependencies
    ```bash
+   cd backend
    npm install
    ```
-2. Create `backend/.env` with the variables listed above.
-3. Start the API in development mode.
+
+2. Create the env file
+   ```bash
+   cp .env.example .env
+   # Fill in all required values
+   ```
+
+3. Start the dev server with hot reload
    ```bash
    npm run dev
    ```
-4. Verify the server is reachable.
-   ```bash
-   curl http://localhost:8000/health
-   ```
-5. Keep the Stripe CLI session running; the `dev` script already starts `stripe listen` and forwards webhooks to `/api/order/checkout/webhook`.
 
-## Docker
-The repository does not ship Docker files, but the current API can be containerized with a minimal setup.
+The API will be available at `http://localhost:8000`.
+
+---
+
+## Running with Docker
 
 ```dockerfile
+# Dockerfile (already in /backend)
 FROM node:22-alpine
-
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
-
+RUN npm ci
 COPY . .
+RUN npm run build
 EXPOSE 8000
-CMD ["npm", "run", "start"]
+CMD ["node", "dist/index.js"]
 ```
 
-```yaml
-services:
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    env_file:
-      - ./backend/.env
+```bash
+# Build and run
+docker build -t hasheats-backend .
+docker run -p 8000:8000 --env-file .env hasheats-backend
 ```
+
+---
 
 ## API Reference
 
-### Health
-| Method | Endpoint | Auth Required | Description |
-| --- | --- | --- | --- |
-| `GET` | `/health` | No | Health check endpoint. |
+### Auth
 
-### Users
-| Method | Endpoint | Auth Required | Description |
-| --- | --- | --- | --- |
-| `GET` | `/api/users` | Yes | Fetch the current authenticated user profile. |
-| `POST` | `/api/users` | Yes | Create a new user record after Auth0 callback. |
-| `PUT` | `/api/users` | Yes | Update the current user profile. |
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/my/user` | ✅ | Create or update user on first Auth0 login |
+| `PUT` | `/api/my/user` | ✅ | Update user profile |
+| `GET` | `/api/my/user` | ✅ | Get current authenticated user |
 
-### Restaurants
-| Method | Endpoint | Auth Required | Description |
-| --- | --- | --- | --- |
-| `GET` | `/api/restaurants` | Yes | Fetch the authenticated owner’s restaurant. |
-| `POST` | `/api/restaurants` | Yes | Create a restaurant with an uploaded image. |
-| `PUT` | `/api/restaurants` | Yes | Update the authenticated owner’s restaurant. |
-| `GET` | `/api/restaurants/order` | Yes | List orders for the authenticated owner’s restaurant. |
-| `GET` | `/api/restaurants/search/:city` | No | Search restaurants by city, cuisine, query, sort, and pagination. |
-| `GET` | `/api/restaurants/:restaurantId` | No | Fetch a restaurant by ID. |
-| `PATCH` | `/api/restaurants/order/:orderId/status` | Yes | Update an order’s status. |
+### Restaurant (Owner)
 
-### Orders
-| Method | Endpoint | Auth Required | Description |
-| --- | --- | --- | --- |
-| `GET` | `/api/order` | Yes | List orders for the current user. |
-| `POST` | `/api/order/checkout/create-checkout-session` | Yes | Create a Stripe checkout session and persist a pending order. |
-| `POST` | `/api/order/checkout/webhook` | No | Stripe webhook receiver that marks paid orders. |
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/my/restaurant` | ✅ | Create a new restaurant |
+| `GET` | `/api/my/restaurant` | ✅ | Get the owner's restaurant |
+| `PUT` | `/api/my/restaurant` | ✅ | Update restaurant details or menu |
+| `GET` | `/api/my/restaurant/order` | ✅ | Get all orders for the owner's restaurant |
+| `PATCH` | `/api/my/restaurant/order/:orderId/status` | ✅ | Update an order's status |
 
-## Database Schema Overview
-| Collection | Key Fields | Notes |
-| --- | --- | --- |
-| `User` | `auth0Id`, `email`, `name`, `addressLine1`, `city`, `country` | Maps Auth0 identities to application users. |
-| `Restaurant` | `user`, `restaurantName`, `city`, `country`, `deliveryPrice`, `estimatedDeliveryTime`, `cuisines`, `menuItems`, `imageUrl`, `lastUpdate` | One restaurant per owner account. |
-| `Order` | `restaurant`, `user`, `deliveryDetails`, `cartItems`, `totalAmount`, `status`, `createdAt` | Stores checkout data and order progress. |
+### Restaurant (Public)
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/restaurant/search/:city` | ❌ | Search restaurants by city with filters |
+| `GET` | `/api/restaurant/:restaurantId` | ❌ | Get a single restaurant with its menu |
+
+### Orders & Payments
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/order/checkout/create-session` | ✅ | Create a Stripe checkout session |
+| `POST` | `/api/order/checkout/webhook` | ❌ | Handle Stripe webhook events (raw body required) |
+| `GET` | `/api/order` | ✅ | Get all orders for the current user |
+
+> ⚠️ The webhook route uses `express.raw({ type: 'application/json' })` and is registered at the root app level, **above** the global `express.json()` middleware. Do not move it into the modular router.
+
+---
+
+## Database Schema
+
+### User
+| Field | Type | Notes |
+|---|---|---|
+| `auth0Id` | String | Unique — Auth0 `sub` claim |
+| `email` | String | Unique |
+| `name` | String | |
+| `addressLine1` | String | |
+| `city` | String | |
+| `country` | String | |
+
+### Restaurant
+| Field | Type | Notes |
+|---|---|---|
+| `user` | ObjectId → User | Owner reference |
+| `restaurantName` | String | |
+| `city` | String | Used for search |
+| `country` | String | |
+| `deliveryPrice` | Number | In smallest currency unit |
+| `estimatedDeliveryTime` | Number | Minutes |
+| `cuisines` | String[] | |
+| `menuItems` | MenuItem[] | Embedded array |
+| `imageUrl` | String | Cloudinary URL |
+| `lastUpdated` | Date | |
+
+### Order
+| Field | Type | Notes |
+|---|---|---|
+| `restaurant` | ObjectId → Restaurant | |
+| `user` | ObjectId → User | |
+| `deliveryDetails` | Object | name, email, addressLine1, city |
+| `cartItems` | Object[] | menuItemId, name, quantity |
+| `totalAmount` | Number | In smallest currency unit |
+| `status` | Enum | `placed` `paid` `inProgress` `outForDelivery` `delivered` |
+| `createdAt` | Date | Auto-managed by Mongoose |
+
+---
 
 ## Auth Flow
-Auth0 issues the access token on the frontend. The backend validates the token signature with `jwtCheck`, decodes the `sub` claim in `jwtParse`, and resolves that Auth0 subject to a local `User` document. Protected routes then use `req.userId` for owner-specific restaurant and order queries.
+
+Auth0 issues short-lived JWTs to the frontend after login. Every protected request must include the token as a `Bearer` header. The backend validates it in two steps:
+
+1. **`jwtCheck`** — Validates the signature and audience using `express-oauth2-jwt-bearer`.
+2. **`jwtParse`** — Decodes the token payload, finds the matching user in MongoDB by `auth0Id`, and attaches it to `req.userId` / `req.auth0Id` for downstream handlers.
 
 ```mermaid
 sequenceDiagram
-  participant U as User
-  participant F as Frontend
-  participant A as Auth0
-  participant B as Backend
-  participant M as MongoDB
+  participant Browser
+  participant Auth0
+  participant API
+  participant MongoDB
 
-  U->>F: Click login
-  F->>A: Redirect to Auth0
-  A-->>F: Return access token + callback
-  F->>B: Call protected API with Bearer token
-  B->>B: Validate JWT and decode Auth0 subject
-  B->>M: Find linked local user
-  M-->>B: User document
-  B-->>F: JSON response
+  Browser->>Auth0: Login redirect
+  Auth0-->>Browser: JWT access token
+  Browser->>API: Request + Bearer token
+  API->>API: jwtCheck (signature + audience)
+  API->>MongoDB: Find user by auth0Id
+  MongoDB-->>API: User document
+  API-->>Browser: Protected response
 ```
 
+---
+
 ## Error Handling
-Controllers wrap request handling in `try/catch` blocks and return JSON errors with appropriate HTTP status codes. Validation failures are surfaced by `express-validator` through shared middleware, while the global error handler in `index.ts` normalizes unexpected errors into `{ success, statusCode, message }` responses. Stripe webhook failures and auth failures are returned explicitly rather than swallowed.
 
-## Testing Instructions
-No automated backend test script is defined in `package.json`. Use the health endpoint and targeted API calls from Postman, Insomnia, or curl to smoke-test auth, restaurant management, and checkout flows.
+All controllers are wrapped in `try/catch`. Validation errors from `express-validator` are caught by a shared middleware that returns a structured `400` response. Unhandled errors fall through to Express's default error handler and return `500`. Stripe webhook errors return `400` to signal Stripe to retry.
 
-## Deployment Notes
-- `npm start` runs the TypeScript source through `tsx`.
-- The backend serves `frontend/dist` statically, so build the frontend before starting the API in production.
-- Use PM2 or a similar process manager on a Node host such as EC2, then place Nginx in front of port `8000` if you need TLS termination or a reverse proxy.
-- Configure Stripe webhooks against the public `/api/order/checkout/webhook` URL and set `FRONTEND_URL` to the deployed frontend domain.
+---
+
+## Deployment
+
+The backend is suitable for deployment on Render, EC2, or any Node-compatible host.
+
+**Using PM2 on EC2:**
+```bash
+npm run build
+pm2 start dist/index.js --name hasheats-api
+pm2 save
+```
+
+**Serving the frontend in production:**
+
+The compiled frontend (`frontend/dist`) is served as static files by Express. The static file path must traverse two levels up from `backend/dist/index.js`:
+
+```ts
+app.use(express.static(path.join(__dirname, "../../frontend/dist")));
+```
+
+Ensure `FRONTEND_URL`, Auth0 Allowed Callbacks/Origins, and the Stripe webhook URL are all updated to the live production domain before triggering a rebuild.
