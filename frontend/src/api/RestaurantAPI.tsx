@@ -1,7 +1,7 @@
 import {useAuth0} from "@auth0/auth0-react";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {toast} from "sonner";
-import type {RestaurantSearchResponse, RestaurantType} from "@/types.ts";
+import type {Order, RestaurantSearchResponse, RestaurantType} from "@/types.ts";
 import type {SearchState} from "@/pages/SearchPage.tsx";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -136,6 +136,34 @@ export const useGetRestaurantById = (restaurantId?: string) => {
     }
     return {
         restaurant,
+        isPending
+    }
+}
+
+export const useGetMyRestaurantOrders = ()=>{
+    const {getAccessTokenSilently} = useAuth0();
+    const getMyRestaurantOrdersRequest = async (): Promise<Order[]> => {
+        const token = await getAccessTokenSilently();
+        const response = await fetch(`${API_BASE_URL}/api/restaurants/order`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+        });
+        if (!response.ok) {
+            throw new Error("Failed to fetch restaurant orders");
+        }
+        return response.json();
+    };
+    const {data: orders, isPending, error} = useQuery({
+        queryKey: ["fetchMyRestaurantOrders"],
+        queryFn: getMyRestaurantOrdersRequest,
+    });
+    if (error){
+        toast.error("Unable to fetch Restaurant Orders");
+    }
+    return {
+        orders,
         isPending
     }
 }

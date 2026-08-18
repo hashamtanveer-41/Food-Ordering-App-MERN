@@ -1,7 +1,7 @@
 import express from "express";
 import {
     createRestaurant,
-    getRestaurant, getRestaurantById,
+    getRestaurant, getRestaurantById, getRestaurantOrders,
     searchRestaurants,
     updateRestaurant
 } from "../controllers/resturantController.ts";
@@ -21,6 +21,7 @@ const upload = multer({
     }
 });
 
+router.get("/order", jwtCheck, jwtParse, getRestaurantOrders)
 router.post("/",jwtCheck, jwtParse, upload.single("imageFile"), validateUserRequest, createRestaurant)
 router.get("/", jwtCheck, jwtParse,getRestaurant)
 router.put("/", jwtCheck, jwtParse, upload.single("imageFile"),validateUserRequest, updateRestaurant)
