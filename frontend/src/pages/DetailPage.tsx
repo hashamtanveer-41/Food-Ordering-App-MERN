@@ -9,6 +9,7 @@ import OrderSummary from "@/components/OrderSummary.tsx";
 import type {MenuItem as MenuItemType} from "../types.ts";
 import CheckoutButton from "@/components/CheckoutButton.tsx";
 import type {UserFormData} from "@/forms/user-profile-form/UserProfileForm.tsx";
+import {type CheckoutSessionRequest, useCreateCheckoutSession} from "@/api/OrderAPI.tsx";
 
 export type CartItem = {
     _id: string;
@@ -18,10 +19,11 @@ export type CartItem = {
 }
 const DetailPage = () => {
     const {restaurantId} = useParams<{restaurantId: string}>()
-    const {restaurant, isPending}  = useGetRestaurantById(restaurantId);
-    const [cartItems, setCartItems] = useState<CartItem[]>(()=>{
-        const storedCartItems = sessionStorage.getItem(`cartItems-${restaurantId}`)
-        return storedCartItems? JSON.stringify(storedCartItems): [];
+    const {restaurant, isPending: isCheckoutLoading}  = useGetRestaurantById(restaurantId);
+    const {isPending, checkoutSession} = useCreateCheckoutSession();
+    const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+        const storedCartItems = sessionStorage.getItem(`cartItems-${restaurantId}`);
+        return storedCartItems? JSON.parse(storedCartItems): [];
     });
     const addToCart = (menuItem: MenuItemType) => {
         setCartItems((prevCartItems) => {
@@ -45,8 +47,27 @@ const DetailPage = () => {
             return updatedCartItems;
         });
     }
-    const onCheckout = (userFormData: UserFormData) =>{
+    const onCheckout = async (userFormData: UserFormData) =>{
+        if (!restaurant){
+            return;
+        }
         console.log("userFormData", userFormData)
+        const checkoutData :CheckoutSessionRequest= {
+            cartItems: cartItems.map((item)=>({
+                menuItemId: item._id,
+                name: item.name,
+                quantity: item.quantity.toString(),
+            })),
+            deliveryDetails: {
+                email: userFormData.email as string,
+                name: userFormData.name,
+                addressLine1: userFormData.addressLine1,
+                city: userFormData.city,
+            },
+            restaurantId: restaurantId as string,
+        }
+        const data = await checkoutSession(checkoutData);
+        window.location.href = data.url;
     }
     if (isPending || !restaurant){
         return <span>Loading...</span>
@@ -69,7 +90,7 @@ const DetailPage = () => {
                     <Card>
                         <OrderSummary restaurant={restaurant} cartItems={cartItems} removeFromCart={removeFromCart}/>
                         <CardFooter>
-                            <CheckoutButton onCheckout={onCheckout} disabled={cartItems.length===0} />
+                            <CheckoutButton onCheckout={onCheckout} isLoading={isCheckoutLoading} disabled={cartItems.length===0} />
                         </CardFooter>
                     </Card>
                 </div>

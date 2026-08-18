@@ -1,7 +1,7 @@
-import type {MenuItem} from "../types.ts";
+import type {MenuItem as MenutItemType} from "../types.ts";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 type Props = {
-    menuItem: MenuItem;
+    menuItem: MenutItemType;
     addToCart: ()=>void;
 }
 const MenuItem = ({menuItem, addToCart}:Props) => {

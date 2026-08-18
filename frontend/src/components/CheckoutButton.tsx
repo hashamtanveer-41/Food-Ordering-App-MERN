@@ -8,9 +8,10 @@ import {userGetCurrentUser} from "@/api/UserAPI.tsx";
 
 type Props = {
     onCheckout: (userFormData: UserFormData) =>void;
-    disabled: boolean
+    disabled: boolean;
+    isLoading: boolean;
 }
-const CheckoutButton = ({onCheckout, disabled}: Props) => {
+const CheckoutButton = ({onCheckout, disabled, isLoading}: Props) => {
     const {isAuthenticated, isLoading: isAuthLoading, loginWithRedirect} = useAuth0();
     const {pathname} = useLocation();
 
@@ -26,15 +27,14 @@ const CheckoutButton = ({onCheckout, disabled}: Props) => {
     if (!isAuthenticated){
         return <Button onClick={onLogin} className="bg-orange-500 flex-1">Log in to check out</Button>
     }
-    if (isAuthLoading || !currentUser){
+    if (isAuthLoading || !currentUser || isLoading){
         return <LoadingButton />
     }
+    // @ts-ignore
     return (
         <Dialog>
-            <DialogTrigger asChild>
-                <Button disabled={disabled} className="bg-orange-500">
+            <DialogTrigger render={<Button disabled={disabled} className="bg-orange-500" />}>
                     Go to checkout
-                </Button>
             </DialogTrigger>
             <DialogContent className="max-w-106.25 md:min-w-175 bg-gray-50">
                 <UserProfileForm currentUser={currentUser} onSave={onCheckout} isLoading={isAuthLoading} title="Confirm Delivery Details" buttonText='Continue to payment'/>
