@@ -1,4 +1,5 @@
 import type {Order} from "@/types.ts";
+import {Progress} from "@/components/ui/progress.tsx";
 
 type Props = {
     order: Order;
@@ -18,6 +19,7 @@ const OrderStatusHeader = ({order}: Props) => {
                 <span className="">Order Status: {order.status}</span>
                 <span>Expected by: {getExpectedDeliveryTime()}</span>
             </h1>
+            <Progress value={50} className="animate-pulse"/>
         </>
     )
 }

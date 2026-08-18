@@ -15,7 +15,7 @@ const CheckoutButton = ({onCheckout, disabled, isLoading}: Props) => {
     const {isAuthenticated, isLoading: isAuthLoading, loginWithRedirect} = useAuth0();
     const {pathname} = useLocation();
 
-    const {currentUser, isPending} = userGetCurrentUser();
+    const {currentUser} = userGetCurrentUser();
     const onLogin = async () =>{
         await loginWithRedirect({
             appState: {
