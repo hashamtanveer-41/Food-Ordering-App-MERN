@@ -35,3 +35,25 @@ export type RestaurantSearchResponse = {
         pages: number,
     }
 }
+export type OrderStatus = "placed" | "paid" | "inProgress" | "outForDelivery" | "delivered";
+
+export type Order = {
+    _id: string;
+    user: User;
+    restaurant: RestaurantType;
+    restaurantId: string;
+    cartItems: {
+        menuItemId: string;
+        name: string;
+        quantity: number;
+    }[];
+    totalAmount: number;
+    deliveryDetails: {
+        email: string;
+        name: string;
+        addressLine1: string;
+        city: string;
+    };
+    status: OrderStatus;
+    createdAt: string;
+}
