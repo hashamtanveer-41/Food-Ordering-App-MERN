@@ -1,13 +1,11 @@
 import "dotenv/config"
 import express, {type NextFunction,type Request,type Response} from "express";
 import cors from "cors";
-import dotenv from "dotenv"
 import mongoose from "mongoose";
 import userRoutes from "./routes/userRoutes.ts";
 import orderRoutes from "./routes/orderRoute.ts";
 import {v2 as cloudinary} from "cloudinary";
 import restaurantRoutes from "./routes/resturantRoutes.ts";
-dotenv.config();
 
 mongoose.connect(process.env.MONGODB_URI as string).then(()=>{
     console.log("Connected to MongoDB");
@@ -22,9 +20,12 @@ cloudinary.config({
 })
 
 const app = express();
-app.use(express.json());
 app.use(cors());
 const PORT = 8000;
+
+app.use("/api/order/checkout/webhook", express.raw({type: "*/*"}));
+
+app.use(express.json());
 
 app.get("/health", async (req: Request, res:Response, next:NextFunction)=>{
     res.send({message: "Server is running"});

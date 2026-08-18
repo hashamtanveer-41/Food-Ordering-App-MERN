@@ -1,10 +1,11 @@
 import type {Request, Response} from "express";
 import {Stripe} from "stripe";
 import Restaurant, {type MenuItemType} from "../models/restaurant.ts";
+import Order from "../models/order.ts";
 
 const STRIPE = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const FRONTEND_URL = process.env.FRONTEND_URL;
-
+const STRIPE_SECRET_WEBHOOK = process.env.STRIPE_SECRET_WEBHOOK as string;
 type CheckoutSessionRequest = {
     cartItems: {
         menuItemId: string;
@@ -26,11 +27,20 @@ export const createCheckoutSession = async (req: Request, res: Response) =>{
         if(!restaurant){
             throw new Error("Restaurant not found");
         }
+        const newOrder = new Order({
+            restaurant: restaurant,
+            user: req.userId,
+            status: "placed",
+            deliveryDetails: checkoutSessionRequest.deliveryDetails,
+            cartItems: checkoutSessionRequest.cartItems,
+            createdAt: new Date(),
+        });
         const lineItems = createLineItems(checkoutSessionRequest, restaurant.menuItems);
-        const session = await createSession(lineItems, "TEST_ORDER_ID", restaurant.deliveryPrice , restaurant._id.toString());
+        const session = await createSession(lineItems, newOrder._id.toString(), restaurant.deliveryPrice , restaurant._id.toString());
         if (!session.url){
             return res.status(500).json({message: "Error creating stripe session"})
         }
+        await newOrder.save();
         res.json({url: session.url});
 
     }catch (error: any){
@@ -89,3 +99,27 @@ const createSession = async (
     });
     return sessionData;
 }
+
+export const stripeWebhookHandler = async (req: Request, res: Response) => {
+    let event;
+    try {
+        const sig = req.headers['stripe-signature'] as string;
+        event = STRIPE.webhooks.constructEvent(req.body, sig, STRIPE_SECRET_WEBHOOK);
+
+    }catch (err:any){
+        console.log(err)
+        res.status(500).json({message: `WebHook error ${err?.message}`})
+    }
+    if(event?.type === "checkout.session.completed"){
+        const session = event.data.object as Stripe.Checkout.Session;
+        const order = await Order.findById(session.metadata?.orderId);
+        if(!order){
+            return res.status(404).json({message: "Order not found"})
+        }
+        order.totalAmount = event.data.object.amount_total;
+        order.status = "paid";
+        await order.save();
+        res.json({message: "Order updated successfully"})
+    }
+    res.status(200).send();
+};
