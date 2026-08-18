@@ -24,6 +24,7 @@ export const useGetOrders = () => {
     const {data:orders, isPending ,error} = useQuery({
         queryKey: ["orders"],
         queryFn: getOrdersRequest,
+        refetchInterval: 5000,
     });
     if (error){
         toast.error(error.toString());

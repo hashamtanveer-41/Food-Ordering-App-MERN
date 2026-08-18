@@ -1,14 +1,25 @@
-import type {Order} from "@/types.ts";
+import type {Order, OrderStatus} from "@/types.ts";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 import {Separator} from "@/components/ui/separator.tsx";
 import {Badge} from "@/components/ui/badge.tsx";
 import {Label} from "@/components/ui/label.tsx";
 import {ORDER_STATUS} from "@/config/order-status-config.ts";
 import {Select, SelectContent, SelectValue, SelectTrigger, SelectItem} from "@/components/ui/select.tsx";
+import {useUpdateOrderStatus} from "@/api/RestaurantAPI.tsx";
+import {useEffect, useState} from "react";
 type Props = {
     order: Order;
 }
 const OrderItemCard = ({order}: Props) => {
+    const {isPending, updateOrderStatus} = useUpdateOrderStatus();
+    const [status, setStatus] = useState<OrderStatus>(order.status)
+    useEffect(() => {
+        setStatus(order.status)
+    }, [order.status]);
+    const handleStatusChange =async (status: string) => {
+        await updateOrderStatus({orderId: order._id, status: status});
+        setStatus(status as OrderStatus);
+    }
     const getTime = () =>{
         const orderDateTime = new Date(order.createdAt);
         const hours = orderDateTime.getHours();
@@ -52,7 +63,7 @@ const OrderItemCard = ({order}: Props) => {
                 </div>
                 <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="status">What is the status for this order?</Label>
-                    <Select>
+                    <Select value={status} onValueChange={(value)=>handleStatusChange(value as OrderStatus)} disabled={isPending}>
                         <SelectTrigger id="status">
                             <SelectValue placeholder="Status"></SelectValue>
                         </SelectTrigger>

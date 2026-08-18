@@ -148,3 +148,32 @@ export const getRestaurantOrders = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Internal server error" });
     }
 }
+
+export const updateOrderStatus = async (req: Request, res: Response) => {
+    try {
+        const { orderId } = req.params;
+        const { status } = req.body;
+
+        const restaurant = await Restaurant.findOne({ user: req.userId as string });
+        if (!restaurant) {
+            return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        if (req.userId !== restaurant?.user?._id.toString()) {
+            return res.status(403).json({ message: "You are not authorized to update this order" });
+        }
+
+        order.status = status;
+        await order.save();
+
+        res.status(200).json(order);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({message: "Internal server error"});
+    }
+}

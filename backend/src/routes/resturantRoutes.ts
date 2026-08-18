@@ -2,7 +2,7 @@ import express from "express";
 import {
     createRestaurant,
     getRestaurant, getRestaurantById, getRestaurantOrders,
-    searchRestaurants,
+    searchRestaurants, updateOrderStatus,
     updateRestaurant
 } from "../controllers/resturantController.ts";
 import multer from "multer";
@@ -34,5 +34,5 @@ router.get("/:restaurantId",
     param("restaurantId").isString().trim().notEmpty().withMessage("Restaurant ID parameter must be a valid string"),
     getRestaurantById
 );
-
+router.patch("/order/:orderId/status",jwtCheck, jwtParse, updateOrderStatus);
 export default router;
