@@ -40,11 +40,13 @@ app.use("/api/users", userRoutes);
 app.use("/api/restaurants", restaurantRoutes);
 app.use("/api/order", orderRoutes);
 
-app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
-app.get(/(.*)/,(req:Request,res:Response)=>{
-    res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
-})
+const frontendPath = path.join(__dirname, '../../frontend/dist');
 
+app.use(express.static(frontendPath));
+
+app.get(/(.*)/, (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+});
 app.use((err: any, req: Request, res:Response, next:NextFunction)=>{
     const statusCode = err.statusCode || 500;
     const message = err.message || "Internal Server Error"
